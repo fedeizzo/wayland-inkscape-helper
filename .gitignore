@@ -1,0 +1,6 @@
+# nix & emacs
+.envrc
+**/*~
+
+/target
+Cargo.lock
