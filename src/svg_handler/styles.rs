@@ -19,7 +19,7 @@ fn encode_style(style: &HashMap<&str, &str>) -> String {
     return encoded;
 }
 
-pub fn fill_to_grey(node: &mut Element) {
+fn fill_to_grey(node: &mut Element) {
     match node.attr("style") {
 	Some(style) => {
 	    let mut new_style = decode_style(style);
@@ -29,4 +29,10 @@ pub fn fill_to_grey(node: &mut Element) {
 	},
 	_ => {}
     }
+}
+
+pub fn get_styles() -> HashMap<String, fn(&mut Element)-> ()> {
+    let mut available_styles: HashMap::<String, fn(&mut Element) -> ()> = HashMap::new();
+    available_styles.insert("fill_to_grey".to_string(), fill_to_grey);
+    available_styles
 }

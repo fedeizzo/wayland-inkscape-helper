@@ -23,7 +23,11 @@ impl SVGFigure {
         let content = Element::from_reader(&mut Reader::from_str(svg_string));
         match content {
             Ok(tree) => Ok(SVGFigure { content: tree }),
-            _ => Err("Unable to load svg from the provided string"),
+            // _ => Err("Unable to load svg from the provided string"),
+            Err(e) => {
+                println!("{:?}", e);
+                Err("Unable to load svg from the provided string")
+            }
         }
     }
 
