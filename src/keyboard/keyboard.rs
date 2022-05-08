@@ -1,18 +1,36 @@
-use std::sync::mpsc::Sender;
+use std::{collections::HashMap, fs::read_dir, sync::mpsc::Sender};
 
 use evdev::{Device, Key};
 
-fn load_keyboard() -> Option<Device> {
-    for input_number in 0..27 {
-        let device = format!("/dev/input/event{}", input_number);
-        let keyboard = Device::open(device).unwrap();
-        let supported = keyboard
-            .supported_keys()
-            .map_or(false, |keys| keys.contains(Key::KEY_ENTER));
-        if supported {
-            return Some(keyboard);
+fn load_keyboard(names: &Option<Vec<String>>) -> Option<Device> {
+    let mut keyboards: HashMap<String, Device> = HashMap::new();
+    let devices = read_dir("/dev/input").ok()?;
+    for input in devices {
+        if let Ok(path) = input {
+            let path = path.path().into_os_string().into_string().unwrap();
+            if path.contains("event") {
+                let device = Device::open(path).ok()?;
+                let device_name = device.name();
+                let supported = device
+                    .supported_keys()
+                    .map_or(false, |keys| keys.contains(Key::KEY_ENTER));
+                if supported && device_name.is_some() {
+                    keyboards.insert(device_name.unwrap().to_string(), device);
+                }
+            }
         }
     }
+    match names {
+        Some(ns) => {
+            for n in ns.into_iter() {
+                if let Some(dev) = keyboards.remove(n) {
+                    return Some(dev);
+                }
+            }
+        }
+        None => {}
+    }
+    println!("{:?}", keyboards.keys());
     None
 }
 
@@ -50,17 +68,10 @@ pub struct Keyboard {
 }
 
 impl Keyboard {
-    pub fn new(device_number: Option<i32>) -> Keyboard {
-        match device_number {
-            Some(num) => Keyboard {
-                device: Device::open(format!("/device/event{}", num))
-                    .expect("Event number passed is not a valid device"),
-                event: None,
-            },
-            _ => Keyboard {
-                device: load_keyboard().expect("No valid keyboard found"),
-                event: None,
-            },
+    pub fn new(device_names: &Option<Vec<String>>) -> Keyboard {
+        Keyboard {
+            device: load_keyboard(&device_names).expect("No valid keyboard found"),
+            event: None,
         }
     }
 
