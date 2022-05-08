@@ -19,25 +19,24 @@ impl ToString for SVGFigure {
 }
 
 impl SVGFigure {
-    pub fn new(svg_string: &str) -> Result<SVGFigure, &'static str> {
+    pub fn new(svg_string: &str) -> Result<SVGFigure, minidom::Error> {
         let content = Element::from_reader(&mut Reader::from_str(svg_string));
         match content {
             Ok(tree) => Ok(SVGFigure { content: tree }),
             // _ => Err("Unable to load svg from the provided string"),
             Err(e) => {
-                println!("{:?}", e);
-                Err("Unable to load svg from the provided string")
+		Err(e)
             }
         }
     }
 
-    pub fn apply_style_g_tag(&mut self, style: fn(&mut Element) -> ()) {
+    pub fn apply_style_g_tag(&mut self, style_closure: &dyn Fn(&mut Element) -> ()) {
         let mut queue: VecDeque<&mut Element> = VecDeque::from([&mut self.content]);
         while !queue.is_empty() {
             let current_node = queue.pop_front().unwrap();
             if current_node.name() == "g" {
                 for child in current_node.children_mut() {
-                    style(child);
+                    style_closure(child);
                 }
             }
             for child in current_node.children_mut() {
